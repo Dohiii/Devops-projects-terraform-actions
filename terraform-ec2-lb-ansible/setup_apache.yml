@@ -1,0 +1,52 @@
+- name: Setup Apache and Deploy Website
+  hosts: ec2_instances
+  become: yes  # Use sudo for all operations
+  tasks:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: yes
+
+    - name: Install Apache2
+      ansible.builtin.apt:
+        name: apache2
+        state: present
+
+    - name: Install zip and unzip
+      ansible.builtin.apt:
+        name:
+          - zip
+          - unzip
+        state: present
+
+    - name: Remove existing web files
+      ansible.builtin.shell: rm -rf /var/www/html/*
+      args:
+        removes: /var/www/html/*  # This ensures the command only runs if there are files to remove
+
+    - name: Download website zip from GitHub
+      ansible.builtin.get_url:
+        url: https://github.com/Dohiii/BakeryShopOnlyMainPage/archive/refs/heads/main.zip
+        dest: /var/www/html/main.zip
+
+    - name: Unzip website files
+      ansible.builtin.unarchive:
+        src: /var/www/html/main.zip
+        dest: /var/www/html/
+        remote_src: yes
+
+    - name: Copy website data to root of html directory
+      ansible.builtin.shell: cp -r /var/www/html/BakeryShopOnlyMainPage-main/* /var/www/html/
+
+    - name: Clean up downloaded and temporary files
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /var/www/html/BakeryShopOnlyMainPage-main
+        - /var/www/html/main.zip
+
+    - name: Ensure Apache is running
+      ansible.builtin.systemd:
+        name: apache2
+        state: started
+        enabled: yes  # This ensures Apache starts on boot
