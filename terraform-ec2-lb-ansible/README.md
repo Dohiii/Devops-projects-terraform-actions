@@ -1,5 +1,3 @@
-Here's the properly formatted `README.md` file for GitHub using appropriate headers, emphasis, and inline code blocks, in line with the style of the CRUD application example:
-
 ---
 
 # Terraform and Ansible Example
