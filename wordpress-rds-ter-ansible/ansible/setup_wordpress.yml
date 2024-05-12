@@ -1,0 +1,97 @@
+---
+- name: Install required packages for MySQL tasks
+  hosts: webserver
+  become: yes
+  tasks:
+    - name: Ensure pip is installed
+      yum:
+        name: python3-pip
+        state: present
+
+    - name: Install PyMySQL
+      pip:
+        name: pymysql
+        state: present
+
+- name: Configure MySQL on EC2
+  hosts: webserver
+  become: yes
+  tasks:
+    - name: Include secrets
+      include_vars:
+        file: secret_vars.yml
+      no_log: true  # To prevent logging of sensitive data
+
+    - name: Install mysql client
+      yum:
+        name: mysql
+        state: present
+
+    - name: Set environment variables for MySQL
+      lineinfile:
+        path: /etc/environment
+        line: "{{ item }}"
+        state: present
+      loop:
+        - "MYSQL_HOST={{ db_host }}"
+        - "MYSQL_PWD={{ db_password }}"
+
+    - name: Create WordPress user and set privileges
+      community.mysql.mysql_user:
+        login_user: "valadmin"
+        login_password: "{{ db_password }}"
+        login_host: "{{ db_host }}"
+        user: "{{ db_name }}"
+        password: "{{ wp_db_password }}"
+        host: "%"  # This specifies that the user can connect from any host
+        priv: '{{ db_name }}.*:ALL'
+        state: present
+
+- name: Configure WordPress on EC2
+  hosts: webserver
+  become: yes
+  tasks:
+    - name: Install HTTPD and PHP
+      yum:
+        name:
+          - httpd
+          - amazon-linux-extras
+        state: present
+
+    - name: Install PHP extensions
+      shell: "amazon-linux-extras install -y mariadb10.5 php8.2"
+      become: true
+
+    - name: Download WordPress
+      get_url:
+        url: https://wordpress.org/latest.tar.gz
+        dest: /tmp/latest.tar.gz
+        mode: '0755'
+
+    - name: Extract WordPress
+      unarchive:
+        src: /tmp/latest.tar.gz
+        dest: /var/www/html/
+        remote_src: yes
+        extra_opts: [--strip-components=1]
+
+    - name: Configure wp-config.php
+      template:
+        src: ../templates/wp-config.php.j2
+        dest: /var/www/html/wp-config.php
+
+    - name: Ensure httpd is started and enabled
+      service:
+        name: httpd
+        state: restarted
+        enabled: yes
+
+    - name: Configure ownership and permissions for web directory
+      file:
+        path: "{{ item }}"
+        owner: apache
+        group: apache
+        mode: '0755'
+      loop:
+        - /var/www/html
+        - /var/www/html/wp-config.php
