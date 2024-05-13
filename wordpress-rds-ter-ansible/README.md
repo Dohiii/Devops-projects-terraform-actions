@@ -5,6 +5,14 @@ This project deploys two virtual machines across different availability zones, w
 
 ## Configuration Steps
 
+Check in AWS if you have SG group created and attached. If not uncomment SG group in the ec2.tf file
+
+```bash
+terraform verify
+terraform plan
+terraform apply
+```
+
 ### Update Security Group Settings
 
 Ensure the default VPC security group has an inbound rule associated with the newly created `wordpress-2-sg` group:
@@ -24,7 +32,7 @@ If necessary, create a new `secret_vars.yml` file:
 ansible-vault create secret_vars.yml
 ```
 
-Inside the file, include variables like the following:
+Inside the file, include variables like the following (variables will be used in setup_wordpress.yml):
 
 ```yaml
 db_host: "host"
@@ -55,4 +63,3 @@ Make sure to update the hosts' IPs and public key paths in `ansible/inventory.in
 - **Ansible**: Run from a Linux machine.
 ```
 
-This README provides a clear overview of the project setup and step-by-step instructions for configuration and deployment, maintaining a professional and clean formatting style suitable for GitHub.
