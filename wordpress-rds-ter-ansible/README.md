@@ -1,6 +1,8 @@
 
 # Project Overview
 
+Source: https://aws.amazon.com/tutorials/deploy-wordpress-with-amazon-rds/module-four/
+
 This project deploys two virtual machines across different availability zones, with an RDS database. It utilizes Ansible to install MySQL and WordPress on the virtual machines. For credential management, Ansible Vault is used. This setup requires minimal manual intervention, such as ensuring the default VPC security group has an inbound rule with the new security group `wordpress-2-sg`.
 
 ## Configuration Steps
